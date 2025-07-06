@@ -413,8 +413,8 @@ ggplot(
   ) +
   scale_fill_manual(
     values = c(
-      "Estatal" = "#3949ab",
-      "Privado" = "#ff9800"
+      "Estatal" = "#578fd3",
+      "Privado" = "#fb9b64"
     )
   ) +
   labs(
@@ -603,4 +603,81 @@ comparativo$Año <- factor(comparativo$Año)
   )
 
 print(grafico_combinado)
+
+
+# PREVIAS =============================
+datos_2024 <- datos_2024 %>%
+  mutate(
+    # La suma de ap26_Si y ap26_No debería ser el Total_Alumnos si están mutuamente excluyentes y cubren todo.
+    # Si 'ap26_Si' es el conteo de alumnos con previas y 'Total_Alumnos' es el total general:
+    Alumnos_Previas = ap26_Si, # Asumo que ap26_Si es el conteo de alumnos con previas
+    Porcentaje_Previas = (Alumnos_Previas / Total_Alumnos) * 100
+  )
+# Resumen de materias previas para 2024
+resumen_2024_previas <- datos_2024 %>%
+  summarise(
+    Total_Alumnos_Con_Previas = sum(Alumnos_Previas, na.rm = TRUE),
+    Total_Alumnos_General = sum(Total_Alumnos, na.rm = TRUE)
+  ) %>%
+  mutate(
+    Año = 2024,
+    Porcentaje_Con_Previas = (Total_Alumnos_Con_Previas / Total_Alumnos_General) * 100
+  )
+
+# Crear dataframes vacíos o con NA para 2019 y 2022 para mantener la consistencia
+resumen_2019_previas <- tibble(
+  Total_Alumnos_Con_Previas = NA_real_,
+  Total_Alumnos_General = NA_real_,
+  Año = 2019,
+  Porcentaje_Con_Previas = NA_real_
+)
+
+resumen_2022_previas <- tibble(
+  Total_Alumnos_Con_Previas = NA_real_,
+  Total_Alumnos_General = NA_real_,
+  Año = 2022,
+  Porcentaje_Con_Previas = NA_real_
+)
+
+# Combinar los resúmenes
+comparativo_previas <- bind_rows(resumen_2019_previas, resumen_2022_previas, resumen_2024_previas) %>%
+  dplyr::select(Año, Total_Alumnos_Con_Previas, Total_Alumnos_General, Porcentaje_Con_Previas)
+
+print(comparativo_previas)
+
+
+
+##################### CREO QUE ES AL PEDO PORQUE SOLO ESTA LA PREG EN 2019 ##################
+# Apoyo a estudiantes =======
+#df_apoyo_2019 <- datos_2019 %>%
+#  dplyr::select(jurisdiccion, sector, ambito, Total_Alumnos, Lengua_Bajo, Lengua_Basico, Lengua_Satisf,
+#                Lengua_Avanzado,Matematica_Bajo, Matematica_Basico, Matematica_Satisf, Matematica_Avanzado,
+#                starts_with("ap42_01_"), starts_with("ap42_02_"), starts_with("ap42_03_"), starts_with("ap42_04_"))%>%
+  # Calcula los porcentajes para cada categoría ap42_xx_yyy dentro de cada grupo
+  # Esto implica que cada fila de datos_2019 es una unidad única (ej. escuela o agregación).
+  # Si Total_Alumnos es el total de la escuela, y ap42_xx_yyy son conteos de alumnos:
+#  mutate(
+    # Para clases_apoyo (ap42_01)
+#    pct_clases_apoyo_Blanco = (ap42_01_Blanco / Total_Alumnos) * 100,
+#    pct_clases_apoyo_No_disponible = (ap42_01_No_disponible / Total_Alumnos) * 100,
+#    pct_clases_apoyo_Nunca = (ap42_01_Nunca / Total_Alumnos) * 100,
+#    pct_clases_apoyo_Algunas_veces = (ap42_01_Algunas_veces / Total_Alumnos) * 100,
+#    pct_clases_apoyo_La_mayoria_de_las_veces = (ap42_01_La_mayoria_de_las_veces / Total_Alumnos) * 100,
+#    pct_clases_apoyo_Siempre = (ap42_01_Siempre / Total_Alumnos) * 100,
+    
+    # Para seguim_pers (ap42_02)
+#    pct_seguim_pers_Blanco = (ap42_02_Blanco / Total_Alumnos) * 100,
+#    pct_seguim_pers_No_disponible = (ap42_02_No_disponible / Total_Alumnos) * 100,
+#    pct_seguim_pers_Nunca = (ap42_02_Nunca / Total_Alumnos) * 100,
+#    pct_seguim_pers_Algunas_veces = (ap42_02_Algunas_veces / Total_Alumnos) * 100,
+#    pct_seguim_pers_La_mayoria_de_las_veces = (ap42_02_La_mayoria_de_las_veces / Total_Alumnos) * 100,
+#    pct_seguim_pers_Siempre = (ap42_02_Siempre / Total_Alumnos) * 100,
+    
+    # Calcular Desempeño General (ej. Satisfactorio + Avanzado)
+#    Lengua_Perf_Satisf = ((Lengua_Satisf + Lengua_Avanzado) / Total_Alumnos) * 100,
+#    Lengua_Perf_Bajo = (Lengua_Bajo / Total_Alumnos) * 100,
+#    Matematica_Perf_Satisf = ((Matematica_Satisf + Matematica_Avanzado) / Total_Alumnos) * 100,
+#    Matematica_Perf_Bajo = (Matematica_Bajo / Total_Alumnos) * 100
+#  ) %>%
+#  mutate(Año = 2019)
 
