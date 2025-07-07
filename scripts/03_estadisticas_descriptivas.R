@@ -240,13 +240,13 @@ ggplot(
     position = position_dodge(width = 0.7),
     width = 0.65
   ) +
-geom_text(
-  aes(label = sprintf("%.1f%%", Porcentaje)),
-  position = position_dodge(width = 0.7),
-  vjust = -0.3,
-  size = 2.5,
-  fontface = "bold"
-) +
+  geom_text(
+    aes(label = sprintf("%.1f%%", Porcentaje)),
+    position = position_dodge(width = 0.7),
+    vjust = -0.3,
+    size = 2.5,
+    fontface = "bold"
+  ) +
   scale_fill_manual(
     values = c(
       "2019" = "grey60",
@@ -566,7 +566,7 @@ library(ggplot2)
 library(dplyr)
 comparativo$Año <- factor(comparativo$Año)
 #7. GRÁFICO COMBINADO (BARRAS + LÍNEA) ======
-  grafico_combinado <- ggplot(comparativo, aes(x = Año)) +
+grafico_combinado <- ggplot(comparativo, aes(x = Año)) +
   geom_col(aes(y = Porcentaje, fill = Año), width = 0.6, alpha = 0.7) +
   geom_line(aes(y = Porcentaje, group = 1), color = "#E74C3C", size = 2) +
   geom_point(aes(y = Porcentaje), color = "#E74C3C", size = 4) +
@@ -605,7 +605,7 @@ comparativo$Año <- factor(comparativo$Año)
 print(grafico_combinado)
 
 
-# PREVIAS =============================
+#8. PREVIAS =============================
 datos_2024 <- datos_2024 %>%
   mutate(
     # La suma de ap26_Si y ap26_No debería ser el Total_Alumnos si están mutuamente excluyentes y cubren todo.
@@ -647,37 +647,230 @@ print(comparativo_previas)
 
 
 
+
+
+
+
+#9. STACKED COLUMNS LENGUA ======
+
+# Crear total general por año
+total_general_lengua <- bind_rows(
+  datos_2019 %>% mutate(Año = 2019),
+  datos_2022 %>% mutate(Año = 2022),
+  datos_2024 %>% mutate(Año = 2024)
+) %>%
+  group_by(Año) %>%
+  summarise(Total_Alumnos_Global = sum(Total_Alumnos, na.rm = TRUE))
+
+# Totales por sector
+conteo_lengua_sector <- bind_rows(
+  datos_2019 %>% mutate(Año = 2019),
+  datos_2022 %>% mutate(Año = 2022),
+  datos_2024 %>% mutate(Año = 2024)
+) %>%
+  group_by(Año, sector) %>%
+  summarise(
+    Bajo = sum(Lengua_Bajo, na.rm = TRUE),
+    Basico = sum(Lengua_Basico, na.rm = TRUE)
+  ) %>%
+  pivot_longer(
+    cols = c(Bajo, Basico),
+    names_to = "Desempeño",
+    values_to = "Cantidad"
+  )
+
+# Unir con total global y calcular %
+resumen_lengua_sector_final <- conteo_lengua_sector %>%
+  left_join(total_general_lengua, by = "Año") %>%
+  mutate(
+    Porcentaje = Cantidad / Total_Alumnos_Global * 100
+  )
+
+# Calcular totales por barra
+lengua_bajo_basico_totales <- resumen_lengua_sector_final %>%
+  group_by(Año, Desempeño) %>%
+  summarise(Total_Barra = sum(Porcentaje), .groups = "drop")
+
+# Gráfico Lengua
+ggplot(
+  resumen_lengua_sector_final,
+  aes(
+    x = factor(Año),
+    y = Porcentaje,
+    fill = sector
+  )
+) +
+  geom_col(
+    position = "stack",
+    width = 0.6
+  ) +
+  geom_text(
+    aes(label = sprintf("%.1f%%", Porcentaje)),
+    position = position_stack(vjust = 0.5),
+    size = 3,
+    fontface = "bold"
+  ) +
+  geom_text(
+    data = lengua_bajo_basico_totales,
+    aes(
+      x = factor(Año),
+      y = Total_Barra + 1.5,
+      label = sprintf("%.1f%%", Total_Barra)
+    ),
+    inherit.aes = FALSE,
+    size = 3.5,
+    fontface = "bold"
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Estatal" = "#5DADE2",
+      "Privado" = "grey75"
+    )
+  ) +
+  facet_wrap(~Desempeño) +
+  labs(
+    title = "Porcentaje de estudiantes en niveles Bajo y Básico - Lengua",
+    x = "Año",
+    y = NULL,
+    fill = "Sector"
+  ) +
+  theme(
+    panel.background = element_blank(),
+    plot.background = element_blank(),
+    panel.grid = element_blank(),
+    axis.line.x = element_line(color = "black"),
+    axis.text.x = element_text(face = "bold"),
+    legend.background = element_blank(),
+    legend.key = element_blank(),
+    plot.title = element_text(size = 14, face = "bold")
+  )
+
+
+#10.STACKED COLUMNS MATEMÁTICA ===============
+
+# Crear total general por año
+total_general_mate <- bind_rows(
+  datos_2019 %>% mutate(Año = 2019),
+  datos_2022 %>% mutate(Año = 2022),
+  datos_2024 %>% mutate(Año = 2024)
+) %>%
+  group_by(Año) %>%
+  summarise(Total_Alumnos_Global = sum(Total_Alumnos, na.rm = TRUE))
+
+# Totales por sector
+conteo_mate_sector <- bind_rows(
+  datos_2019 %>% mutate(Año = 2019),
+  datos_2022 %>% mutate(Año = 2022),
+  datos_2024 %>% mutate(Año = 2024)
+) %>%
+  group_by(Año, sector) %>%
+  summarise(
+    Bajo = sum(Matematica_Bajo, na.rm = TRUE),
+    Basico = sum(Matematica_Basico, na.rm = TRUE)
+  ) %>%
+  pivot_longer(
+    cols = c(Bajo, Basico),
+    names_to = "Desempeño",
+    values_to = "Cantidad"
+  )
+
+# Unir con total global y calcular %
+resumen_mate_sector_final <- conteo_mate_sector %>%
+  left_join(total_general_mate, by = "Año") %>%
+  mutate(
+    Porcentaje = Cantidad / Total_Alumnos_Global * 100
+  )
+
+# Calcular totales por barra
+mate_bajo_basico_totales <- resumen_mate_sector_final %>%
+  group_by(Año, Desempeño) %>%
+  summarise(Total_Barra = sum(Porcentaje), .groups = "drop")
+
+# Gráfico Matemática
+ggplot(
+  resumen_mate_sector_final,
+  aes(
+    x = factor(Año),
+    y = Porcentaje,
+    fill = sector
+  )
+) +
+  geom_col(
+    position = "stack",
+    width = 0.6
+  ) +
+  geom_text(
+    aes(label = sprintf("%.1f%%", Porcentaje)),
+    position = position_stack(vjust = 0.5),
+    size = 3,
+    fontface = "bold"
+  ) +
+  geom_text(
+    data = mate_bajo_basico_totales,
+    aes(
+      x = factor(Año),
+      y = Total_Barra + 1.5,
+      label = sprintf("%.1f%%", Total_Barra)
+    ),
+    inherit.aes = FALSE,
+    size = 3.5,
+    fontface = "bold"
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Estatal" = "#fb9b64",
+      "Privado" = "grey75"
+    )
+  ) +
+  facet_wrap(~Desempeño) +
+  labs(
+    title = "Porcentaje de estudiantes en niveles Bajo y Básico - Matemática",
+    x = "Año",
+    y = NULL,
+    fill = "Sector"
+  ) +
+  theme(
+    panel.background = element_blank(),
+    plot.background = element_blank(),
+    panel.grid = element_blank(),
+    axis.line.x = element_line(color = "black"),
+    axis.text.x = element_text(face = "bold"),
+    legend.background = element_blank(),
+    legend.key = element_blank(),
+    plot.title = element_text(size = 14, face = "bold")
+  )
+
+
 ##################### CREO QUE ES AL PEDO PORQUE SOLO ESTA LA PREG EN 2019 ##################
 # Apoyo a estudiantes =======
 #df_apoyo_2019 <- datos_2019 %>%
 #  dplyr::select(jurisdiccion, sector, ambito, Total_Alumnos, Lengua_Bajo, Lengua_Basico, Lengua_Satisf,
 #                Lengua_Avanzado,Matematica_Bajo, Matematica_Basico, Matematica_Satisf, Matematica_Avanzado,
 #                starts_with("ap42_01_"), starts_with("ap42_02_"), starts_with("ap42_03_"), starts_with("ap42_04_"))%>%
-  # Calcula los porcentajes para cada categoría ap42_xx_yyy dentro de cada grupo
-  # Esto implica que cada fila de datos_2019 es una unidad única (ej. escuela o agregación).
-  # Si Total_Alumnos es el total de la escuela, y ap42_xx_yyy son conteos de alumnos:
+# Calcula los porcentajes para cada categoría ap42_xx_yyy dentro de cada grupo
+# Esto implica que cada fila de datos_2019 es una unidad única (ej. escuela o agregación).
+# Si Total_Alumnos es el total de la escuela, y ap42_xx_yyy son conteos de alumnos:
 #  mutate(
-    # Para clases_apoyo (ap42_01)
+# Para clases_apoyo (ap42_01)
 #    pct_clases_apoyo_Blanco = (ap42_01_Blanco / Total_Alumnos) * 100,
 #    pct_clases_apoyo_No_disponible = (ap42_01_No_disponible / Total_Alumnos) * 100,
 #    pct_clases_apoyo_Nunca = (ap42_01_Nunca / Total_Alumnos) * 100,
 #    pct_clases_apoyo_Algunas_veces = (ap42_01_Algunas_veces / Total_Alumnos) * 100,
 #    pct_clases_apoyo_La_mayoria_de_las_veces = (ap42_01_La_mayoria_de_las_veces / Total_Alumnos) * 100,
 #    pct_clases_apoyo_Siempre = (ap42_01_Siempre / Total_Alumnos) * 100,
-    
-    # Para seguim_pers (ap42_02)
+
+# Para seguim_pers (ap42_02)
 #    pct_seguim_pers_Blanco = (ap42_02_Blanco / Total_Alumnos) * 100,
 #    pct_seguim_pers_No_disponible = (ap42_02_No_disponible / Total_Alumnos) * 100,
 #    pct_seguim_pers_Nunca = (ap42_02_Nunca / Total_Alumnos) * 100,
 #    pct_seguim_pers_Algunas_veces = (ap42_02_Algunas_veces / Total_Alumnos) * 100,
 #    pct_seguim_pers_La_mayoria_de_las_veces = (ap42_02_La_mayoria_de_las_veces / Total_Alumnos) * 100,
 #    pct_seguim_pers_Siempre = (ap42_02_Siempre / Total_Alumnos) * 100,
-    
-    # Calcular Desempeño General (ej. Satisfactorio + Avanzado)
+
+# Calcular Desempeño General (ej. Satisfactorio + Avanzado)
 #    Lengua_Perf_Satisf = ((Lengua_Satisf + Lengua_Avanzado) / Total_Alumnos) * 100,
 #    Lengua_Perf_Bajo = (Lengua_Bajo / Total_Alumnos) * 100,
 #    Matematica_Perf_Satisf = ((Matematica_Satisf + Matematica_Avanzado) / Total_Alumnos) * 100,
 #    Matematica_Perf_Bajo = (Matematica_Bajo / Total_Alumnos) * 100
 #  ) %>%
 #  mutate(Año = 2019)
-
